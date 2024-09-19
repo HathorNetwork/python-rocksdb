@@ -181,6 +181,7 @@ cdef extern from "rocksdb/db.h" namespace "rocksdb":
         void GetLiveFilesMetaData(vector[LiveFileMetaData]*) nogil except+
         void GetColumnFamilyMetaData(ColumnFamilyHandle*, ColumnFamilyMetaData*) nogil except+
         ColumnFamilyHandle* DefaultColumnFamily()
+        Status TryCatchUpWithPrimary() nogil except+
 
 
     cdef Status DB_Open "rocksdb::DB::Open"(
@@ -190,6 +191,20 @@ cdef extern from "rocksdb/db.h" namespace "rocksdb":
 
     cdef Status DB_Open_ColumnFamilies "rocksdb::DB::Open"(
         const options.Options&,
+        const string&,
+        const vector[ColumnFamilyDescriptor]&,
+        vector[ColumnFamilyHandle*]*,
+        DB**) nogil except+
+
+    cdef Status DB_OpenAsSecondary "rocksdb::DB::OpenAsSecondary"(
+        const options.Options&,
+        const string&,
+        const string&,
+        DB**) nogil except+
+
+    cdef Status DB_OpenAsSecondary_ColumnFamilies "rocksdb::DB::OpenAsSecondary"(
+        const options.Options&,
+        const string&,
         const string&,
         const vector[ColumnFamilyDescriptor]&,
         vector[ColumnFamilyHandle*]*,

@@ -1442,9 +1442,10 @@ cdef class DB(object):
     cdef list cf_handles
     cdef list cf_options
 
-    def __cinit__(self, db_name, Options opts, dict column_families=None, read_only=False):
+    def __cinit__(self, db_name, Options opts, dict column_families=None, read_only=False, secondary_path=None):
         cdef Status st
         cdef string db_path
+        cdef string c_secondary_path
         cdef vector[db.ColumnFamilyDescriptor] column_family_descriptors
         cdef vector[db.ColumnFamilyHandle*] column_family_handles
         cdef bytes default_cf_name = db.kDefaultColumnFamilyName
@@ -1491,6 +1492,7 @@ cdef class DB(object):
                 )
                 self.cf_options.append(cf_options)
         if read_only:
+            assert secondary_path is None
             with nogil:
                 st = db.DB_OpenForReadOnly_ColumnFamilies(
                     deref(opts.opts),
@@ -1499,6 +1501,16 @@ cdef class DB(object):
                     &column_family_handles,
                     &self.db,
                     False)
+        elif secondary_path:
+            c_secondary_path = path_to_string(secondary_path)
+            with nogil:
+                st = db.DB_OpenAsSecondary_ColumnFamilies(
+                    deref(opts.opts),
+                    db_path,
+                    c_secondary_path,
+                    column_family_descriptors,
+                    &column_family_handles,
+                    &self.db)
         else:
             with nogil:
                 st = db.DB_Open_ColumnFamilies(
@@ -2080,6 +2092,12 @@ cdef class DB(object):
         del py_handle
         if copts:
             copts.in_use = False
+
+    def try_catch_up_with_primary(self):
+        cdef Status st
+        with nogil:
+            st = self.db.TryCatchUpWithPrimary()
+        check_status(st)
 
 
 def repair_db(db_name, Options opts):
