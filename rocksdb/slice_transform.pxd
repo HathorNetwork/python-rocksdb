@@ -9,10 +9,10 @@ cdef extern from "rocksdb/slice_transform.h" namespace "rocksdb":
         pass
 
     cdef const SliceTransform* ST_NewCappedPrefixTransform "rocksdb::NewCappedPrefixTransform"(
-        size_t) nogil except+
+        size_t) except+ nogil 
 
     cdef const SliceTransform* ST_NewFixedPrefixTransform "rocksdb::NewFixedPrefixTransform"(
-        size_t) nogil except+
+        size_t) except+ nogil 
 
 ctypedef Slice (*transform_func)(
     void*,
@@ -39,5 +39,5 @@ cdef extern from "cpp/slice_transform_wrapper.hpp" namespace "py_rocks":
                 void*,
                 transform_func,
                 in_domain_func,
-                in_range_func) nogil except+
-        void set_info_log(shared_ptr[Logger]) nogil except+
+                in_range_func) except+ nogil 
+        void set_info_log(shared_ptr[Logger]) except+ nogil 

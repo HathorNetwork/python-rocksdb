@@ -62,13 +62,6 @@ import weakref
 cdef extern from "cpp/utils.hpp" namespace "py_rocks":
     cdef const Slice* vector_data(vector[Slice]&)
 
-# Prepare python for threaded usage.
-# Python callbacks (merge, comparator)
-# could be executed in a rocksdb background thread (eg. compaction).
-cdef extern from "Python.h":
-    void PyEval_InitThreads()
-PyEval_InitThreads()
-
 ## Here comes the stuff to wrap the status to exception
 cdef check_status(const Status& st):
     if st.ok():
@@ -100,19 +93,20 @@ cdef check_status(const Status& st):
 
 
 cdef string bytes_to_string(path) except *:
-    return string(PyBytes_AsString(path), PyBytes_Size(path))
+    return string(PyBytes_AsString(path), <size_t> PyBytes_Size(path))
 
 cdef string_to_bytes(string ob):
-    return PyBytes_FromStringAndSize(ob.c_str(), ob.size())
+    return PyBytes_FromStringAndSize(ob.c_str(), <Py_ssize_t> ob.size())
 
 cdef Slice bytes_to_slice(ob) except *:
-    return Slice(PyBytes_AsString(ob), PyBytes_Size(ob))
+    return Slice(PyBytes_AsString(ob), <size_t> PyBytes_Size(ob))
 
-cdef Slice* bytes_to_new_slice(ob) except *:
-    return new Slice(PyBytes_AsString(ob), PyBytes_Size(ob))
+# XXX: unused
+#cdef Slice* bytes_to_new_slice(ob) except *:
+#    return new Slice(PyBytes_AsString(ob), <size_t> PyBytes_Size(ob))
 
 cdef slice_to_bytes(Slice sl):
-    return PyBytes_FromStringAndSize(sl.data(), sl.size())
+    return PyBytes_FromStringAndSize(sl.data(), <Py_ssize_t> sl.size())
 
 ## only for filsystem paths
 cdef string path_to_string(object path) except *:
@@ -126,7 +120,7 @@ cdef string path_to_string(object path) except *:
 
 cdef object string_to_path(string path):
     fs_encoding = sys.getfilesystemencoding().encode('ascii')
-    return PyUnicode_Decode(path.c_str(), path.size(), fs_encoding, "replace")
+    return PyUnicode_Decode(path.c_str(), <Py_ssize_t> path.size(), fs_encoding, "replace")
 
 ## Here comes the stuff for the comparator
 @cython.internal
@@ -311,7 +305,7 @@ cdef cpp_bool full_merge_callback(
         ret = (<object>ctx).full_merge(
             slice_to_bytes(key),
             py_existing_value,
-            [string_to_bytes(op_list[i]) for i in range(op_list.size())])
+            [string_to_bytes(op_list[i]) for i in range(<size_t> op_list.size())])
 
         if ret[0]:
             new_value.assign(bytes_to_string(ret[1]))
@@ -524,7 +518,7 @@ cdef class BlockBasedTableFactory(PyTableFactory):
                 table_options.cache_index_and_filter_blocks = False
 
         if format_version is not None:
-            table_options.format_version = format_version
+            table_options.format_version = <uint32_t> format_version
 
         self.factory.reset(table_factory.NewBlockBasedTableFactory(table_options))
 
@@ -641,7 +635,7 @@ cdef class _ColumnFamilyHandle:
 
     @property
     def id(self):
-        return self.handle.GetID()
+        return <int> self.handle.GetID()
 
     @property
     def weakref(self):
@@ -1378,7 +1372,7 @@ cdef class WriteBatch(object):
         return string_to_bytes(self.batch.Data())
 
     def count(self):
-        return self.batch.Count()
+        return <int> self.batch.Count()
 
     def __iter__(self):
         return WriteBatchIterator(self)
@@ -1694,7 +1688,7 @@ cdef class DB(object):
             keys = list(dict.fromkeys(keys))
 
         cdef vector[string] values
-        values.resize(len(keys))
+        values.resize(<size_t> len(keys))
 
         cdef db.ColumnFamilyHandle* cf_handle
         cdef vector[db.ColumnFamilyHandle*] cf_handles
@@ -1722,7 +1716,8 @@ cdef class DB(object):
         cdef dict ret_dict = {}
         cdef list ret_list = []
         if as_dict:
-            for index in range(len(keys)):
+            for index in range(<size_t> len(keys)):
+                index = <size_t> index
                 if res[index].ok():
                     ret_dict[keys[index]] = string_to_bytes(values[index])
                 elif res[index].IsNotFound():
@@ -1732,7 +1727,8 @@ cdef class DB(object):
 
             return ret_dict
         else:
-            for index in range(len(keys)):
+            for index in range(<size_t> len(keys)):
+                index = <size_t> index
                 if res[index].ok():
                     ret_list.append(string_to_bytes(values[index]))
                 elif res[index].IsNotFound():
@@ -1830,7 +1826,7 @@ cdef class DB(object):
 
     def iterskeys(self, column_families, *args, **kwargs):
         cdef vector[db.Iterator*] iters
-        iters.resize(len(column_families))
+        iters.resize(<size_t> len(column_families))
         cdef options.ReadOptions opts
         cdef db.Iterator* it_ptr
         cdef KeysIterator it
@@ -1855,7 +1851,7 @@ cdef class DB(object):
 
     def itersvalues(self, column_families, *args, **kwargs):
         cdef vector[db.Iterator*] iters
-        iters.resize(len(column_families))
+        iters.resize(<size_t> len(column_families))
         cdef options.ReadOptions opts
         cdef db.Iterator* it_ptr
         cdef ValuesIterator it
@@ -1879,7 +1875,7 @@ cdef class DB(object):
 
     def iterskeys(self, column_families, *args, **kwargs):
         cdef vector[db.Iterator*] iters
-        iters.resize(len(column_families))
+        iters.resize(<size_t> len(column_families))
         cdef options.ReadOptions opts
         cdef db.Iterator* it_ptr
         cdef ItemsIterator it

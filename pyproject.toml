@@ -1,3 +1,90 @@
+[project]
+name = "rocksdb"
+version = "0.9.3"
+description = "Python bindings for RocksDB"
+readme = "README.md"
+authors = [
+    { name = "Stephan Hofmockel" },
+    { name = "Ming Hsuan Tu", email = "qrnnis2623891@gmail.com" },
+    { name = "Martina Ferrari", email = "tina@tina.pm" },
+    { name = "Jan Segre", email = "jan@hathor.network" },
+]
+maintainers = [
+    { name = "Jan Segre", email = "jan@hathor.network" },
+]
+#url = "https://github.com/HathorNetwork/python-rocksdb"
+requires-python = ">=3.10"
+#license = "BSD-3-Clause"
+license = {file = "LICENSE"}
+keywords = ["rocksdb", "bindings"]
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 3 - Alpha",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+  "Topic :: Database",
+  "License :: OSI Approved :: BSD License",
+
+  # Specify the Python versions you support here.
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+
+[project.optional-dependencies]
+doc = [
+    "sphinx",
+    "sphinx_rtd_theme",
+]
+test = [
+  "pytest",
+]
+
+[project.urls]
+Repository = "https://github.com/HathorNetwork/python-rocksdb"
+Issues = "https://github.com/HathorNetwork/python-rocksdb/issues"
+
+[tool.setuptools.packages.find]
+include = ["rocksdb*"]
+where = ["."]
+
+[tool.setuptools.package-data]
+"rocksdb.cpp" = ["*.hpp"]
+"rocksdb" = ["*.pxd", "*.pyx"]
+
+[tool.setuptools_scm]
+write_to = "docs/_build/version.txt"
+
+[tool.sphinx]
+source-dir = "docs"
+build-dir = "docs/_build"
+all-files = true
+
+[tool.tox]
+envlist = ["py310", "py311", "py312"]
+min_version = "4.11"
+isolated_build = true
+no_package = true
+
+[tool.tox.testenv]
+deps = [".[test]"]
+changedir = "/"
+commands = ["pytest {envsitepackagesdir}/rocksdb"]
+
+[tool.tox.testenv.docs]
+deps = [".[doc]"]
+commands = ["python setup.py build_sphinx -W"]
+
+[tool.pytest.ini_options]
+addopts = "--verbose --pyargs"
+norecursedirs = [".tox"]
+
 [build-system]
-requires = ["setuptools", "wheel", "cython", "pkgconfig"]
+requires = ["setuptools>=61", "wheel>=0.45.0", "Cython>=3.0.0"]
 build-backend = "setuptools.build_meta"

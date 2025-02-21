@@ -1,42 +1,25 @@
-FROM ubuntu:20.04
-ENV SRC /home/tester/src
-ENV DEBIAN_FRONTEND noninteractive
+# before changing these variables, make sure the tag $PYTHON-alpine$ALPINE exists first
+# list of valid tags hese: https://hub.docker.com/_/python
+ARG PYTHON=3.11
+# this could be bullseye as well
+ARG DEBIAN=bookworm
 
-RUN apt-get update -y && apt-get install -qy \
-        locales \
-        git \
-        wget \
-        python \
-        python3 \
-        python-dev \
-        python3-dev \
-        python3-pip \
-        librocksdb-dev \
-        libsnappy-dev \
-        zlib1g-dev \
-        libbz2-dev \
-        liblz4-dev \
-        && rm -rf /var/lib/apt/lists/*
+# use this image to copy uv binaries from
+# bookworm is not parametrized to $DEBIAN because there is no bullseye image, and the binary from bookworm works just fine
+FROM ghcr.io/astral-sh/uv:python$PYTHON-bookworm-slim AS uv-bin
+RUN uv -V
+RUN uvx -V
 
-#NOTE(sileht): really no utf-8 in 2017 !?
-ENV LANG en_US.UTF-8
-RUN update-locale
-RUN locale-gen $LANG
-
-#NOTE(sileht): Upgrade python dev tools
-RUN pip3 install -U pip tox virtualenv setuptools pytest Cython
-
-# Set username same as generic default username. Allows output build to be available to same user
-ENV USER_NAME ubuntu
-
-ARG host_uid=1001
-ARG host_gid=1001
-RUN groupadd -g $host_gid $USER_NAME && \
-    useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME
-
-USER $USER_NAME
-
-ENV BUILD_INPUT_DIR /home/$USER_NAME/workspace
-RUN mkdir -p $BUILD_INPUT_DIR
-
-WORKDIR $BUILD_INPUT_DIR
+# stage-0: copy pyproject.toml/poetry.lock and install the production set of dependencies
+FROM python:$PYTHON-slim-$DEBIAN
+ARG PYTHON
+# install runtime first deps to speedup the dev deps and because layers will be reused on stage-1
+RUN apt-get -qy update
+RUN apt-get -qy install libffi-dev build-essential zlib1g-dev libbz2-dev libsnappy-dev liblz4-dev librocksdb-dev
+COPY --from=uv-bin /usr/local/bin/uv /usr/local/bin/uvx /bin/
+WORKDIR /app/
+COPY pyproject.toml setup.py README.md LICENSE ./
+RUN uv venv
+COPY rocksdb ./rocksdb
+RUN uv pip install --editable .[test]
+RUN uvx pytest

@@ -1,5 +1,4 @@
-python-rocksdb
-==============
+# python-rocksdb
 
 This project is based off the efforts from
 https://github.com/NightTsarina/python-rocksdb and basically strips backup

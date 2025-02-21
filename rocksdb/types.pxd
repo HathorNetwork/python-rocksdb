@@ -22,7 +22,7 @@ cdef extern from "rocksdb/types.h" namespace "rocksdb":
 
         FullKey() except+
         FullKey(const Slice&, const SequenceNumber&, EntryType) except+
-        string DebugString(cpp_bool hex) nogil except+
-        void clear() nogil except+
+        string DebugString(cpp_bool hex) except+ nogil 
+        void clear() except+ nogil 
 
     cpp_bool ParseFullKey(const Slice&, FullKey*)

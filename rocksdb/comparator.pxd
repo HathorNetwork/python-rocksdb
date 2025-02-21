@@ -8,7 +8,7 @@ cdef extern from "rocksdb/comparator.h" namespace "rocksdb":
         const char* Name()
         int Compare(const Slice&, const Slice&) const
 
-    cdef extern const Comparator* BytewiseComparator() nogil except +
+    cdef extern const Comparator* BytewiseComparator() except + nogil 
 
 ctypedef int (*compare_func)(
     void*,
@@ -19,5 +19,5 @@ ctypedef int (*compare_func)(
 
 cdef extern from "cpp/comparator_wrapper.hpp" namespace "py_rocks":
     cdef cppclass ComparatorWrapper:
-        ComparatorWrapper(string, void*, compare_func) nogil except +
-        void set_info_log(shared_ptr[Logger]) nogil except+
+        ComparatorWrapper(string, void*, compare_func) except + nogil 
+        void set_info_log(shared_ptr[Logger]) except+ nogil 

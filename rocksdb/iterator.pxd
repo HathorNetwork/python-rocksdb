@@ -4,13 +4,13 @@ from .status cimport Status
 
 cdef extern from "rocksdb/iterator.h" namespace "rocksdb":
     cdef cppclass Iterator:
-        cpp_bool Valid() nogil except+
-        void SeekToFirst() nogil except+
-        void SeekToLast() nogil except+
-        void Seek(const Slice&) nogil except+
-        void Next() nogil except+
-        void Prev() nogil except+
-        void SeekForPrev(const Slice&) nogil except+
-        Slice key() nogil except+
-        Slice value() nogil except+
-        Status status() nogil except+
+        cpp_bool Valid() except+ nogil 
+        void SeekToFirst() except+ nogil 
+        void SeekToLast() except+ nogil 
+        void Seek(const Slice&) except+ nogil 
+        void Next() except+ nogil 
+        void Prev() except+ nogil 
+        void SeekForPrev(const Slice&) except+ nogil 
+        Slice key() except+ nogil 
+        Slice value() except+ nogil 
+        Status status() except+ nogil 
