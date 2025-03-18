@@ -600,7 +600,6 @@ cdef class CompressionType(object):
     lz4hc_compression = u'lz4hc_compression'
     xpress_compression = u'xpress_compression'
     zstd_compression = u'zstd_compression'
-    zstdnotfinal_compression = u'zstdnotfinal_compression'
     disable_compression = u'disable_compression'
 
 cdef class CompactionPri(object):
@@ -827,8 +826,6 @@ cdef class ColumnFamilyOptions(object):
                 return CompressionType.xpress_compression
             elif self.copts.compression == options.kZSTD:
                 return CompressionType.zstd_compression
-            elif self.copts.compression == options.kZSTDNotFinalCompression:
-                return CompressionType.zstdnotfinal_compression
             elif self.copts.compression == options.kDisableCompressionOption:
                 return CompressionType.disable_compression
             else:
@@ -849,8 +846,6 @@ cdef class ColumnFamilyOptions(object):
                 self.copts.compression = options.kLZ4HCCompression
             elif value == CompressionType.zstd_compression:
                 self.copts.compression = options.kZSTD
-            elif value == CompressionType.zstdnotfinal_compression:
-                self.copts.compression = options.kZSTDNotFinalCompression
             elif value == CompressionType.disable_compression:
                 self.copts.compression = options.kDisableCompressionOption
             else:
