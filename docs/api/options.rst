@@ -846,7 +846,6 @@ CompressionTypes
     .. py:attribute:: lz4hc_compression
     .. py:attribute:: xpress_compression
     .. py:attribute:: zstd_compression
-    .. py:attribute:: zstdnotfinal_compression
     .. py:attribute:: disable_compression
 
 
