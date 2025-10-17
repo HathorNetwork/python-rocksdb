@@ -13,7 +13,7 @@ def get_brew_prefix(package):
 include_dirs = []
 library_dirs = []
 extra_compile_args = [
-    "-std=c++17",
+    "-std=c++20",
     "-O2",
     "-fno-strict-aliasing",
     "-fno-rtti",
@@ -22,7 +22,7 @@ extra_compile_args = [
 
 if platform.system() == "Darwin":
     extra_compile_args.extend([
-        "-mmacosx-version-min=10.7",
+        "-mmacosx-version-min=11.0",
         "-stdlib=libc++",
         "-Wno-unreachable-code",
     ])
