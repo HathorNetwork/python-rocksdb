@@ -2008,6 +2008,28 @@ cdef class DB(object):
         st = self.db.CompactRange(c_options, cf_handle, begin_ptr, end_ptr)
         check_status(st)
 
+    def flush(self, wait=True, ColumnFamilyHandle column_family=None):
+        """
+        Flush all memtable data.
+
+        Args:
+            wait (bool): If True (default), the flush will wait until the
+                flush is done.
+            column_family: Column family to flush. If None, the default
+                column family is used.
+        """
+        cdef Status st
+        cdef options.FlushOptions flush_opts
+        flush_opts.wait = wait
+
+        cdef db.ColumnFamilyHandle* cf_handle = self.db.DefaultColumnFamily()
+        if column_family:
+            cf_handle = (<ColumnFamilyHandle?>column_family).get_handle()
+
+        with nogil:
+            st = self.db.Flush(flush_opts, cf_handle)
+        check_status(st)
+
     @staticmethod
     def __parse_read_opts(
             verify_checksums=False,
