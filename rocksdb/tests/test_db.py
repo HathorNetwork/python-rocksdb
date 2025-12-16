@@ -734,3 +734,142 @@ class TestDBColumnFamilies(TestHelper):
 
         self.db.compact_range(column_family=self.cf_b)
 
+    def test_flush(self):
+        # Check initial state
+        initial_l0_files = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+
+        # Write some data
+        self.db.put(b"a", b"1")
+        self.db.put(b"b", b"2")
+
+        # Verify data is in memtable (memtable size > 0)
+        memtable_size_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables'))
+        self.assertGreater(memtable_size_before, 0)
+
+        # Flush with default parameters (all column families, wait=True)
+        self.db.flush()
+
+        # Verify memtable size decreased after flush
+        memtable_size_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables'))
+        self.assertLess(memtable_size_after, memtable_size_before)
+
+        # Verify flush created SST files at level 0
+        final_l0_files = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+        self.assertGreater(final_l0_files, initial_l0_files)
+
+    def test_flush_no_wait(self):
+        # Write some data
+        self.db.put(b"a", b"1")
+
+        # Flush without waiting - just verify it doesn't raise an exception
+        self.db.flush(wait=False)
+
+    def test_flush_all_column_families(self):
+        # Check initial state for each column family
+        initial_default_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+        initial_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        initial_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        # Write to multiple column families
+        self.db.put(b"default_key", b"default_value")
+        self.db.put((self.cf_a, b"a_key"), b"a_value")
+        self.db.put((self.cf_b, b"b_key"), b"b_value")
+
+        # Check memtable sizes before flush
+        memtable_default_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables'))
+        memtable_cf_a_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_a))
+        memtable_cf_b_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_b))
+        self.assertGreater(memtable_default_before, 0)
+        self.assertGreater(memtable_cf_a_before, 0)
+        self.assertGreater(memtable_cf_b_before, 0)
+
+        # Flush all column families (default behavior)
+        self.db.flush()
+
+        # Verify memtable sizes decreased after flush
+        memtable_default_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables'))
+        memtable_cf_a_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_a))
+        memtable_cf_b_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_b))
+        self.assertLess(memtable_default_after, memtable_default_before)
+        self.assertLess(memtable_cf_a_after, memtable_cf_a_before)
+        self.assertLess(memtable_cf_b_after, memtable_cf_b_before)
+
+        # Verify all column families were flushed (SST files created)
+        final_default_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+        final_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        final_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        self.assertGreater(final_default_l0, initial_default_l0)
+        self.assertGreater(final_cf_a_l0, initial_cf_a_l0)
+        self.assertGreater(final_cf_b_l0, initial_cf_b_l0)
+
+    def test_flush_single_column_family(self):
+        # Check initial state
+        initial_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        initial_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        # Write to multiple column families
+        self.db.put((self.cf_a, b"a_key"), b"a_value")
+        self.db.put((self.cf_b, b"b_key"), b"b_value")
+
+        # Check memtable sizes before flush
+        memtable_cf_a_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_a))
+        memtable_cf_b_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_b))
+        self.assertGreater(memtable_cf_a_before, 0)
+        self.assertGreater(memtable_cf_b_before, 0)
+
+        # Flush only cf_a
+        self.db.flush(column_families=self.cf_a)
+
+        # Verify memtable size decreased for cf_a but not for cf_b
+        memtable_cf_a_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_a))
+        memtable_cf_b_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_b))
+        self.assertLess(memtable_cf_a_after, memtable_cf_a_before)
+        self.assertEqual(memtable_cf_b_after, memtable_cf_b_before)  # cf_b memtable unchanged
+
+        # Verify only cf_a was flushed (SST files created)
+        final_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        final_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        self.assertGreater(final_cf_a_l0, initial_cf_a_l0)
+        self.assertEqual(final_cf_b_l0, initial_cf_b_l0)  # cf_b should NOT be flushed
+
+    def test_flush_multiple_column_families(self):
+        # Check initial state
+        initial_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        initial_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        # Write to multiple column families
+        self.db.put((self.cf_a, b"a_key"), b"a_value")
+        self.db.put((self.cf_b, b"b_key"), b"b_value")
+
+        # Check memtable sizes before flush
+        memtable_cf_a_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_a))
+        memtable_cf_b_before = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_b))
+        self.assertGreater(memtable_cf_a_before, 0)
+        self.assertGreater(memtable_cf_b_before, 0)
+
+        # Flush both cf_a and cf_b
+        self.db.flush(column_families=[self.cf_a, self.cf_b])
+
+        # Verify memtable sizes decreased for both
+        memtable_cf_a_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_a))
+        memtable_cf_b_after = int(self.db.get_property(b'rocksdb.cur-size-all-mem-tables', self.cf_b))
+        self.assertLess(memtable_cf_a_after, memtable_cf_a_before)
+        self.assertLess(memtable_cf_b_after, memtable_cf_b_before)
+
+        # Verify both were flushed (SST files created)
+        final_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        final_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        self.assertGreater(final_cf_a_l0, initial_cf_a_l0)
+        self.assertGreater(final_cf_b_l0, initial_cf_b_l0)
+
+    def test_flush_invalid_column_families(self):
+        # Test that passing invalid type raises TypeError
+        with self.assertRaises(TypeError):
+            self.db.flush(column_families="invalid")
+
+        with self.assertRaises(TypeError):
+            self.db.flush(column_families=["invalid", self.cf_a])
+
