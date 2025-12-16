@@ -2008,26 +2008,49 @@ cdef class DB(object):
         st = self.db.CompactRange(c_options, cf_handle, begin_ptr, end_ptr)
         check_status(st)
 
-    def flush(self, wait=True, ColumnFamilyHandle column_family=None):
+    def flush(self, wait=True, column_families=None):
         """
-        Flush all memtable data.
+        Flush memtable data for column families.
+
+        If atomic flush is not enabled, flushing multiple column families is
+        equivalent to calling flush for each column family individually.
+        If atomic flush is enabled, all specified column families will be
+        flushed atomically up to the latest sequence number at the time
+        when flush is requested.
 
         Args:
             wait (bool): If True (default), the flush will wait until the
                 flush is done.
-            column_family: Column family to flush. If None, the default
-                column family is used.
+            column_families: Specifies which column families to flush:
+                - None (default): flushes ALL column families in the database
+                - A single ColumnFamilyHandle: flushes only that column family
+                - A list/tuple of ColumnFamilyHandle objects: flushes those column families
         """
         cdef Status st
         cdef options.FlushOptions flush_opts
+        cdef vector[db.ColumnFamilyHandle*] cf_handles
+        cdef _ColumnFamilyHandle handle
         flush_opts.wait = wait
 
-        cdef db.ColumnFamilyHandle* cf_handle = self.db.DefaultColumnFamily()
-        if column_family:
-            cf_handle = (<ColumnFamilyHandle?>column_family).get_handle()
+        # Handle different input types for column_families
+        if column_families is None:
+            # Flush ALL column families
+            for handle in self.cf_handles:
+                cf_handles.push_back(handle.handle)
+        elif isinstance(column_families, ColumnFamilyHandle):
+            # Single column family
+            cf_handles.push_back((<ColumnFamilyHandle?>column_families).get_handle())
+        elif isinstance(column_families, (list, tuple)):
+            # Multiple column families
+            for cf in column_families:
+                if not isinstance(cf, ColumnFamilyHandle):
+                    raise TypeError("All items in column_families must be ColumnFamilyHandle objects")
+                cf_handles.push_back((<ColumnFamilyHandle?>cf).get_handle())
+        else:
+            raise TypeError("column_families must be None, a ColumnFamilyHandle, or a list of ColumnFamilyHandle objects")
 
         with nogil:
-            st = self.db.Flush(flush_opts, cf_handle)
+            st = self.db.Flush(flush_opts, cf_handles)
         check_status(st)
 
     @staticmethod

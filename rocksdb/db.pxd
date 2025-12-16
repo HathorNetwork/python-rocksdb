@@ -167,6 +167,7 @@ cdef extern from "rocksdb/db.h" namespace "rocksdb":
         const string& GetName() except+ nogil
         const options.Options& GetOptions(ColumnFamilyHandle*) except+ nogil
         Status Flush(const options.FlushOptions&, ColumnFamilyHandle*) except+ nogil
+        Status Flush(const options.FlushOptions&, const vector[ColumnFamilyHandle*]&) except+ nogil
         Status DisableFileDeletions() except+ nogil
         Status EnableFileDeletions() except+ nogil
         Status Close() except+ nogil
