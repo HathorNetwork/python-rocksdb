@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rocksdb-version: ['v6.29.5', 'v7.10.2', 'v8.11.4', 'v9.10.0']
+        rocksdb-version: ['v10.0.1', 'v10.7.5']
 
     steps:
       - uses: actions/cache@v4
@@ -68,8 +68,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-        rocksdb-version: ['v6.29.5', 'v7.10.2', 'v8.11.4', 'v9.10.0']
+        python-version: ['3.11', '3.12', '3.13']
+        rocksdb-version: ['v10.0.1', 'v10.7.5']
 
     steps:
       - uses: actions/checkout@v4
@@ -113,9 +113,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - { arch: 'Intel', runner: 'macos-13' }
-          - { arch: 'Arm', runner: 'macos-latest' }
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+          - macos-15
+        python-version: ['3.11', '3.12', '3.13']
 
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +148,7 @@ jobs:
         os:
           - { arch: 'x64', runner: 'ubuntu-latest' }
           - { arch: 'arm', runner: 'ubuntu-24.04-arm' }
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.11', '3.12', '3.13']
         debian-dist: [bullseye, bookworm]
     steps:
       - uses: actions/checkout@v4

@@ -1,6 +1,6 @@
 [project]
 name = "rocksdb"
-version = "0.9.3"
+version = "0.10.0"
 description = "Python bindings for RocksDB"
 readme = "README.md"
 authors = [
@@ -13,7 +13,7 @@ maintainers = [
     { name = "Jan Segre", email = "jan@hathor.network" },
 ]
 #url = "https://github.com/HathorNetwork/python-rocksdb"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 #license = "BSD-3-Clause"
 license = {file = "LICENSE"}
 keywords = ["rocksdb", "bindings"]
@@ -31,7 +31,6 @@ classifiers = [
 
   # Specify the Python versions you support here.
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
