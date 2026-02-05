@@ -713,6 +713,21 @@ Options objects
         | *Type:* ``int``
         | *Default:* ``0``
 
+    .. py:attribute:: max_total_wal_size
+
+        Once write-ahead logs exceed this size, we will start forcing the flush of
+        column families whose memtables are backed by the oldest live WAL file
+        (i.e. the ones that are causing all the space amplification). If set to 0
+        (default), we will dynamically choose the WAL size limit to be
+        [sum of all write_buffer_size * max_write_buffer_number] * 4.
+        This option takes effect only when there are more than one column family as
+        otherwise the wal size is dictated by the write_buffer_size.
+
+        Dynamically changeable through SetDBOptions() API.
+
+        | *Type:* ``int``
+        | *Default:* ``0``
+
     .. py:attribute:: manifest_preallocation_size
 
         Number of bytes to preallocate (via fallocate) the manifest

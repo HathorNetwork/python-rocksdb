@@ -734,3 +734,101 @@ class TestDBColumnFamilies(TestHelper):
 
         self.db.compact_range(column_family=self.cf_b)
 
+    def test_flush(self):
+        # Check initial state
+        initial_l0_files = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+
+        # Write some data
+        self.db.put(b"a", b"1")
+        self.db.put(b"b", b"2")
+
+        # Flush with default parameters (all column families, wait=True)
+        self.db.flush()
+
+        # Verify flush created SST files at level 0
+        final_l0_files = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+        self.assertGreater(final_l0_files, initial_l0_files)
+
+    def test_flush_no_wait(self):
+        # Write some data
+        self.db.put(b"a", b"1")
+
+        # Flush without waiting - just verify it doesn't raise an exception
+        self.db.flush(wait=False)
+
+    def test_flush_all_column_families(self):
+        # Check initial state for each column family
+        initial_default_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+        initial_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        initial_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        # Write to multiple column families
+        self.db.put(b"default_key", b"default_value")
+        self.db.put((self.cf_a, b"a_key"), b"a_value")
+        self.db.put((self.cf_b, b"b_key"), b"b_value")
+
+        # Flush all column families (default behavior)
+        self.db.flush()
+
+        # Verify all column families were flushed (SST files created)
+        final_default_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0'))
+        final_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        final_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        self.assertGreater(final_default_l0, initial_default_l0)
+        self.assertGreater(final_cf_a_l0, initial_cf_a_l0)
+        self.assertGreater(final_cf_b_l0, initial_cf_b_l0)
+
+    def test_flush_single_column_family(self):
+        # Check initial state
+        initial_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        initial_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        # Write to multiple column families
+        self.db.put((self.cf_a, b"a_key"), b"a_value")
+        self.db.put((self.cf_b, b"b_key"), b"b_value")
+
+        # Flush only cf_a
+        self.db.flush(column_families=self.cf_a)
+
+        # Verify only cf_a was flushed (SST files created)
+        final_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        final_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        self.assertGreater(final_cf_a_l0, initial_cf_a_l0)
+        self.assertEqual(final_cf_b_l0, initial_cf_b_l0)  # cf_b should NOT be flushed
+
+    def test_flush_multiple_column_families(self):
+        # Check initial state
+        initial_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        initial_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        # Write to multiple column families
+        self.db.put((self.cf_a, b"a_key"), b"a_value")
+        self.db.put((self.cf_b, b"b_key"), b"b_value")
+
+        # Flush both cf_a and cf_b
+        self.db.flush(column_families=[self.cf_a, self.cf_b])
+
+        # Verify both were flushed (SST files created)
+        final_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        final_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        self.assertGreater(final_cf_a_l0, initial_cf_a_l0)
+        self.assertGreater(final_cf_b_l0, initial_cf_b_l0)
+
+        # Verify both were flushed (SST files created)
+        final_cf_a_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_a))
+        final_cf_b_l0 = int(self.db.get_property(b'rocksdb.num-files-at-level0', self.cf_b))
+
+        self.assertGreater(final_cf_a_l0, initial_cf_a_l0)
+        self.assertGreater(final_cf_b_l0, initial_cf_b_l0)
+
+    def test_flush_invalid_column_families(self):
+        # Test that passing invalid type raises TypeError
+        with self.assertRaises(TypeError):
+            self.db.flush(column_families="invalid")
+
+        with self.assertRaises(TypeError):
+            self.db.flush(column_families=["invalid", self.cf_a])
+

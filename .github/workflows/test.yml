@@ -97,7 +97,7 @@ jobs:
           CPPFLAGS: -I${{ env.LIBROCKSDB_PATH }}/include
           LDFLAGS: -L${{ env.LIBROCKSDB_PATH }}/lib
         run: |
-          uv venv
+          uv venv --clear
           uv pip install --editable .[test]
 
       - name: Run tests
@@ -131,7 +131,7 @@ jobs:
 
       - name: Build python-rocksdb
         run: |
-          uv venv
+          uv venv --clear
           uv pip install --editable .[test]
 
       - name: Run tests
@@ -164,7 +164,7 @@ jobs:
 
       - name: Build python-rocksdb
         run: |
-          uv venv
+          uv venv --clear
           uv pip install --editable .[test]
 
       - name: Run tests

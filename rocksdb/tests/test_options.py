@@ -171,3 +171,14 @@ class TestOptions(unittest.TestCase):
         self.assertIsNone(opts.row_cache)
         opts.row_cache = cache = rocksdb.LRUCache(2*1024*1024)
         self.assertEqual(cache, opts.row_cache)
+
+    def test_max_total_wal_size(self):
+        opts = rocksdb.Options()
+        # Default value is 0
+        self.assertEqual(opts.max_total_wal_size, 0)
+        # Set to a specific value and verify setter works
+        opts.max_total_wal_size = 100 * 1024 * 1024  # 100 MB
+        self.assertEqual(opts.max_total_wal_size, 100 * 1024 * 1024)
+        # Set back to 0 (dynamic)
+        opts.max_total_wal_size = 0
+        self.assertEqual(opts.max_total_wal_size, 0)
