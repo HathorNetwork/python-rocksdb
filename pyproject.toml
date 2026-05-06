@@ -1,6 +1,6 @@
 [project]
 name = "rocksdb"
-version = "0.10.0"
+version = "0.10.1"
 description = "Python bindings for RocksDB"
 readme = "README.md"
 authors = [

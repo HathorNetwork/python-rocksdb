@@ -185,25 +185,26 @@ cdef extern from "rocksdb/db.h" namespace "rocksdb":
         Status TryCatchUpWithPrimary() nogil except+
 
 
-    cdef Status DB_Open "rocksdb::DB::Open"(
+cdef extern from "cpp/db_helpers.hpp" namespace "py_rocks":
+    cdef Status DB_Open "py_rocks::DBOpen"(
         const options.Options&,
         const string&,
         DB**) except+ nogil
 
-    cdef Status DB_Open_ColumnFamilies "rocksdb::DB::Open"(
+    cdef Status DB_Open_ColumnFamilies "py_rocks::DBOpenColumnFamilies"(
         const options.Options&,
         const string&,
         const vector[ColumnFamilyDescriptor]&,
         vector[ColumnFamilyHandle*]*,
         DB**) except+ nogil
 
-    cdef Status DB_OpenAsSecondary "rocksdb::DB::OpenAsSecondary"(
+    cdef Status DB_OpenAsSecondary "py_rocks::DBOpenAsSecondary"(
         const options.Options&,
         const string&,
         const string&,
         DB**) nogil except+
 
-    cdef Status DB_OpenAsSecondary_ColumnFamilies "rocksdb::DB::OpenAsSecondary"(
+    cdef Status DB_OpenAsSecondary_ColumnFamilies "py_rocks::DBOpenAsSecondaryColumnFamilies"(
         const options.Options&,
         const string&,
         const string&,
@@ -211,19 +212,23 @@ cdef extern from "rocksdb/db.h" namespace "rocksdb":
         vector[ColumnFamilyHandle*]*,
         DB**) nogil except+
 
-    cdef Status DB_OpenForReadOnly "rocksdb::DB::OpenForReadOnly"(
+    cdef Status DB_OpenForReadOnly "py_rocks::DBOpenForReadOnly"(
         const options.Options&,
         const string&,
         DB**,
         cpp_bool) except+ nogil
 
-    cdef Status DB_OpenForReadOnly_ColumnFamilies "rocksdb::DB::OpenForReadOnly"(
+    cdef Status DB_OpenForReadOnly_ColumnFamilies "py_rocks::DBOpenForReadOnlyColumnFamilies"(
         const options.Options&,
         const string&,
         const vector[ColumnFamilyDescriptor]&,
         vector[ColumnFamilyHandle*]*,
         DB**,
         cpp_bool) except+ nogil
+
+    cdef void DB_Destroy "py_rocks::DBDestroy"(DB*) except+ nogil
+
+cdef extern from "rocksdb/db.h" namespace "rocksdb":
 
     cdef Status RepairDB(const string& dbname, const options.Options&)
 

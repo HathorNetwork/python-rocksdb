@@ -1568,6 +1568,7 @@ cdef class DB(object):
             del self.cf_options[:]
             with nogil:
                 st = self.db.Close()
+                db.DB_Destroy(self.db)
                 self.db = NULL
             if self.opts is not None:
                 self.opts.in_use = False
